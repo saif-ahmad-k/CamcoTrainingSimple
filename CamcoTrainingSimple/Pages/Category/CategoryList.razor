@@ -1,0 +1,83 @@
+﻿@page "/Category/CategoryList"
+@layout NavMenuAdmin
+@using Syncfusion.Blazor.DropDowns
+@using CamcoTrainingSimple.Data
+@using CamcoTrainingSimple.Data.Models
+@using System.ComponentModel.DataAnnotations
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Spinner
+@inject Microsoft.AspNetCore.Components.NavigationManager navigationManager
+@inject Blazored.Toast.Services.IToastService toastService
+
+<h3>Category</h3>
+<small>Add as many Category as you wish.</small>
+<div class="form-group">
+    <a class="btn btn-success" href="Category/createCategory"><i class="oi oi-plus"></i> Create New</a>
+</div>
+<br>
+@if (developers == null)
+{
+    <text>Loading...</text>
+}
+
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (tCategory dev in developers)
+            {
+            <tr>
+                <td>@dev.Id</td>
+
+                <td>@dev.Code</td>
+                <td>@dev.Name</td>
+                <td>@dev.CreatedDate</td>
+            
+
+                <td><button @onclick="@(() => Remove(dev))">Delete</button></td>
+              
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    private List<tCategory> developers;
+    void Remove(tCategory item)
+    {
+        using (var db = new TrainingDbContext())
+        {
+            db.tCategories.Remove(item);
+            db.SaveChanges();
+        }
+        OnInitializedAsync();
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using (var db = new TrainingDbContext())
+        {
+            developers = db.tCategories.ToList();
+        }
+        //async Task Delete(int developerId)
+        //{
+        //    var dev = developers.First(x => x.Id == developerId);
+        //    if (await js.InvokeAsync<bool>("confirm", $"Do you want to delete {dev.FirstName}'s ({dev.Id}) Record?"))
+        //    {
+        //        await client.DeleteAsync($"api/developer/{developerId}");
+        //        await OnInitializedAsync();
+        //    }
+        //}
+    }
+}

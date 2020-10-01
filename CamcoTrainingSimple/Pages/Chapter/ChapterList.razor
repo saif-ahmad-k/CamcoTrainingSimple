@@ -1,0 +1,77 @@
+﻿@page "/Chapter/ChapterList"
+@layout NavMenuAdmin
+@using Syncfusion.Blazor.DropDowns
+@using CamcoTrainingSimple.Data
+@using CamcoTrainingSimple.Data.Models
+@using System.ComponentModel.DataAnnotations
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Spinner
+@inject Microsoft.AspNetCore.Components.NavigationManager navigationManager
+@inject Blazored.Toast.Services.IToastService toastService
+
+<h3>Chapter</h3>
+<small>Add as many Chapter as you wish.</small>
+<div class="form-group">
+    <a class="btn btn-success" href="Chapter/createChapter"><i class="oi oi-plus"></i> Create New</a>
+</div>
+<br>
+@if (developers == null)
+{
+<text>Loading...</text> }
+
+            else
+            {
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (tChapter dev in developers)
+        {
+        <tr>
+            <td>@dev.Chapter_Id</td>
+
+            <td>@dev.Code</td>
+            <td>@dev.Name</td>
+            <td>@dev.CategoryId</td>
+         
+            <td><button @onclick="@(() => Remove(dev))">Delete</button></td>
+           
+        </tr>
+        }
+    </tbody>
+</table>}
+@code { private List<tChapter> developers;
+    void Remove(tChapter item)
+    {
+        using (var db = new TrainingDbContext())
+        {
+            db.tChapters.Remove(item);
+            db.SaveChanges();
+        }
+        OnInitializedAsync();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await using (var db = new TrainingDbContext())
+        {
+            developers = db.tChapters.ToList();
+        }
+        //async Task Delete(int developerId)
+        //{
+        //    var dev = developers.First(x => x.Id == developerId);
+        //    if (await js.InvokeAsync<bool>("confirm", $"Do you want to delete {dev.FirstName}'s ({dev.Id}) Record?"))
+        //    {
+        //        await client.DeleteAsync($"api/developer/{developerId}");
+        //        await OnInitializedAsync();
+        //    }
+        //}
+    }
+}

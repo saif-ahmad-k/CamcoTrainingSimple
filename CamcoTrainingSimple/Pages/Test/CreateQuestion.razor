@@ -1,0 +1,233 @@
+﻿@page "/Test/CreateQuestion"
+@layout NavMenuAdmin
+
+@using Syncfusion.Blazor.DropDowns
+@using CamcoTrainingSimple.Data
+@using CamcoTrainingSimple.Data.Models
+@using System.ComponentModel.DataAnnotations
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Spinner
+@inject Microsoft.AspNetCore.Components.NavigationManager navigationManager
+@inject Blazored.Toast.Services.IToastService toastService
+
+<header>
+    <h1 style="text-align: center">Create New Question</h1>
+</header>
+
+<div class="container-fluid p-3" style="background-color:white; border: 2px solid black">
+    <EditForm Model="@atTestInfo" id="editForm" OnValidSubmit="@HandleValidSubmit" Context="mainContext">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="Name" class="control-label">Question #</label>
+                    <input for="Name" class="form-control" @bind="QuestionNo" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="Name" class="control-label">Discription</label>
+                    <input for="Name" class="form-control" @bind="Discription" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="Name" class="control-label">A</label>
+                    <input for="Name" class="form-control" @bind="A" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="Name" class="control-label">B</label>
+                    <input for="Name" class="form-control" @bind="B" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="Name" class="control-label">C</label>
+                    <input for="Name" class="form-control" @bind="C" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="Name" class="control-label">D</label>
+                    <input for="Name" class="form-control" @bind="D" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="Name" class="control-label">Correct Option</label>
+                    <input for="Name" class="form-control" @bind="CorrectOption" />
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="text-center mt-4">
+            <button class="btn btn-success" type="submit">Submit</button>
+        </div>
+    </EditForm>
+    <div class="text-center mt-4">
+        <button class="btn btn-success" @onclick="@(async () => await GoBack())" type="Button">Finished</button>
+    </div>
+</div>
+<!--<SfSpinner @ref="SpinnerObj" Target="#editForm">
+</SfSpinner>-->
+
+@code { private bool IsSubmitted = false;
+    private NewTestDetails atTestInfo = new NewTestDetails();
+    private string Name { get; set; }
+    private string Code { get; set; }
+    private string QuestionNo { get; set; }
+    private string Discription { get; set; }
+    private string A { get; set; }
+    private string B { get; set; }
+    private string C { get; set; }
+    private string D { get; set; }
+    private string CorrectOption { get; set; }
+    string status;
+    //[Required]
+    private int TestId { get; set; }
+
+    SfSpinner SpinnerObj;
+    private string Target { get; set; } = "#editForm";
+
+    private string[] _cssTypes = new string[] { "e-toast-warning", "e-toast-success", "e-toast-danger", "e-toast-info" };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using (var db = new TrainingDbContext())
+        {
+            var info = db.tTests.OrderByDescending(x => x.Test_Id).FirstOrDefault();
+            TestId = info.Test_Id;
+        }
+    }
+
+    public async Task GoBack()
+    {
+        try
+        {
+
+
+
+            navigationManager.NavigateTo($"/Test/CreateTest");
+        }
+
+
+        catch (Exception ex)
+        {
+            toastService.ShowError("Error submitting Work Order!", "Failed Submit");
+            IsSubmitted = false;
+        }
+        //SpinnerObj.HideSpinner(Target);
+    }
+
+
+    public async void HandleValidSubmit()
+    {
+        try
+        {
+
+            IsSubmitted = true;
+            tQuestion saveData;
+            tMCQ SavemCQ;
+            //SpinnerObj.ShowSpinner(Target);
+            await using (var db = new TrainingDbContext())
+            {
+                saveData = new tQuestion
+                {
+                    QuestionNumber = QuestionNo,
+                    QuestionDescription = Discription,
+                    CorrectOption = CorrectOption,
+                    TestId=TestId,
+                    Dated=DateTime.Now,
+
+                };
+                db.tQuestions.Add(saveData);
+                db.SaveChanges();
+                SavemCQ = new tMCQ
+                {
+                    QuestionId = saveData.Question_Id,
+                    MCQDescription = A,
+                    Code = "A",
+                };
+                db.tMCQs.Add(SavemCQ);
+                db.SaveChanges();
+                SavemCQ = new tMCQ
+                {
+                    QuestionId = saveData.Question_Id,
+                    MCQDescription = B,
+                    Code = "B",
+                };
+                db.tMCQs.Add(SavemCQ);
+                db.SaveChanges();
+                SavemCQ = new tMCQ
+                {
+                    QuestionId = saveData.Question_Id,
+                    MCQDescription = C,
+                    Code = "C",
+                };
+                db.tMCQs.Add(SavemCQ);
+                db.SaveChanges();
+                SavemCQ = new tMCQ
+                {
+                    QuestionId = saveData.Question_Id,
+                    MCQDescription = D,
+                    Code = "D",
+                };
+                db.tMCQs.Add(SavemCQ);
+                db.SaveChanges();
+                Name = "";
+                Code = "";
+                Discription = "";
+                A = "";
+                B = "";
+                C = "";
+                D = "";
+                CorrectOption = "";
+                QuestionNo = "";
+
+            }
+
+
+            toastService.ShowSuccess("Successfully submitted Work Order!", "Successful Submit");
+            navigationManager.NavigateTo($"/Test/CreateQuestion");
+
+
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError("Error submitting Work Order!", "Failed Submit");
+            IsSubmitted = false;
+        }
+        //SpinnerObj.HideSpinner(Target);
+    }
+
+    public partial class NewTestDetails
+    {
+        //[Required]
+        public int? InterviewerId { get; set; }
+        public int? EmpId { get; set; }
+        public int? CategoryId { get; set; }
+        //[Required]
+
+
+    } }

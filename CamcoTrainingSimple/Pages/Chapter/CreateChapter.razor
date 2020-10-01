@@ -1,0 +1,148 @@
+﻿@page "/Chapter/CreateChapter"
+@layout NavMenuAdmin
+
+@using Syncfusion.Blazor.DropDowns
+@using CamcoTrainingSimple.Data
+@using CamcoTrainingSimple.Data.Models
+@using System.ComponentModel.DataAnnotations
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Spinner
+@inject Microsoft.AspNetCore.Components.NavigationManager navigationManager
+@inject Blazored.Toast.Services.IToastService toastService
+
+<header>
+    <h1 style="text-align: center">Create New Chapter</h1>
+</header>
+
+<div class="container-fluid p-3" style="background-color:white; border: 2px solid black">
+    <EditForm Model="@atTestInfo" id="editForm" OnValidSubmit="@HandleValidSubmit" Context="mainContext">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        @*<div class="row">
+                <div class="col-lg-12 control-section">
+                    <h4 for="datetimeopen">Date/Time Open</h4>
+                    <div class="control_wrapper">
+                        <h3>@atTestInfo.DateTimeOpen.ToString()</h3>
+                    </div>
+                </div>
+            </div>*@
+
+
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="Name" class="control-label">Name</label>
+                    <input for="Name" class="form-control" @bind="Name" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="Code" class="control-label">Code</label>
+                    <input for="Code" class="form-control" @bind="Code" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="CategoryId" class="control-label">Category</label>
+                    <select class="form-control" @onchange="InterviewerClicked">
+                        <option value="0">-- Select Category --</option>
+                        @if (Category != null)
+                        {
+        @foreach (var Employee in Category)
+        {
+<option value="@Employee.CategoryId">@Employee.Name</option>
+}}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <button class="btn btn-success" type="submit">Submit</button>
+        </div>
+    </EditForm>
+</div>
+
+<!--<SfSpinner @ref="SpinnerObj" Target="#editForm">
+</SfSpinner>-->
+
+@code { private bool IsSubmitted = false;
+    private NewTestDetails atTestInfo = new NewTestDetails();
+    public String Name { get; set; }
+    private List<tChapter> Category;
+    //[Required]
+    public string Code { get; set; }
+    SfSpinner SpinnerObj;
+    private string Target { get; set; } = "#editForm";
+    private string[] _cssTypes = new string[] { "e-toast-warning", "e-toast-success", "e-toast-danger", "e-toast-info" };
+    protected override async Task OnInitializedAsync()
+    {
+        await using (var db = new TrainingDbContext())
+        {
+            Category = db.tChapters.ToList();
+            //atTestInfo.Priority = 5;
+        }
+    }
+    void InterviewerClicked(ChangeEventArgs clickedEvent)
+    {
+        atTestInfo.InterviewerId = clickedEvent.Value.ToString().ToInteger();
+    }
+
+    //public void TestChanged()
+    //{
+    //    using (var db = new TrainingDbContext())
+    //    {
+    //        atTestInfo.TestId = db.MaintenanceMasterEquipmentList.Where(a => a.EquipmentStatus == "ACTIVE" && (a.Location == atTestInfo.Location || a.Location == "CAMCO") && a.IsActive).OrderBy(a => a.EquipmentBrassTag).ToList();
+    //    }
+    //}
+
+    public async void HandleValidSubmit()
+    {
+        try
+        {
+            if (IsSubmitted == false)
+            {
+                IsSubmitted = true;
+                tChapter saveData;
+                //SpinnerObj.ShowSpinner(Target);
+                await using (var db = new TrainingDbContext())
+                {
+                    saveData = new tChapter
+                    {
+                        Name = Name,
+                        Code = Code,
+                        CategoryId = atTestInfo.InterviewerId,
+
+                    };
+                    db.tChapters.Add(saveData);
+
+                    db.SaveChanges();
+                }
+
+
+                toastService.ShowSuccess("Successfully submitted Work Order!", "Successful Submit");
+                navigationManager.NavigateTo($"/Chapter/ChapterList");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError("Error submitting Work Order!", "Failed Submit");
+            IsSubmitted = false;
+        }
+        //SpinnerObj.HideSpinner(Target);
+    }
+
+    public partial class NewTestDetails
+    {
+        //[Required]
+        public int? InterviewerId { get; set; }
+        //[Required]
+
+
+    } }

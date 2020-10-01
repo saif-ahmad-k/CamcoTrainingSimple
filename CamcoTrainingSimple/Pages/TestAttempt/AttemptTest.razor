@@ -1,0 +1,207 @@
+﻿@page "/TestAttempt/AttemptTest"
+
+@using Syncfusion.Blazor.DropDowns
+@using CamcoTrainingSimple.Data
+@using CamcoTrainingSimple.Data.Models
+@using System.ComponentModel.DataAnnotations
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Spinner
+@inject Microsoft.AspNetCore.Components.NavigationManager navigationManager
+@inject Blazored.Toast.Services.IToastService toastService
+
+<header>
+    <h1 style="text-align: center">Attempt new Test</h1>
+</header>
+
+<div class="container-fluid p-3" style="background-color:white; border: 2px solid black">
+    <EditForm Model="@atTestInfo" id="editForm" OnValidSubmit="@HandleValidSubmit" Context="mainContext">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        @*<div class="row">
+            <div class="col-lg-12 control-section">
+                <h4 for="datetimeopen">Date/Time Open</h4>
+                <div class="control_wrapper">
+                    <h3>@atTestInfo.DateTimeOpen.ToString()</h3>
+                </div>
+            </div>
+        </div>*@
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="QuestionNo" class="control-label">QuestionNo</label>
+                    <input for="QuestionNo" class="form-control" @bind="QuestionNo" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    <label for="QuestionNo" class="control-label">Description</label>
+                    <input for="QuestionNo" class="form-control" @bind="Description" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 control-section">
+                <div class="control_wrapper">
+                    @if (Mcqs != null)
+                    {
+                        @foreach (var Interviewer in Mcqs)
+                        {
+                            <label for="RadioValue" class="control-label">@Interviewer.Code</label>
+                            <input type="radio" name="RadioValue" id="@Interviewer.MCQ_Id" value="@Interviewer.Code" @onchange="RadioSelection" />
+
+                            <label for="RadioValue" class="control-label">@Interviewer.MCQDescription</label>
+                            <br />
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <button class="btn btn-success" type="submit">Submit</button>
+        </div>
+    </EditForm>
+</div>
+
+<!--<SfSpinner @ref="SpinnerObj" Target="#editForm">
+</SfSpinner>-->
+
+@code {
+
+
+    public string QuestionNo { get; set; }
+    public string Description { get; set; }
+
+
+
+    private string Code { get; set; }
+    private int TestId  { get; set; }
+    private int AttemptedTestId { get; set; }
+    private int QuestionId { get; set; }
+    private string RadioValue { get; set; }
+    private string CorrectOption { get; set; }
+    private int EmpId { get; set; }
+    private int InterviewerId { get; set; }
+
+
+
+
+
+    private bool IsSubmitted = false;
+    private NewTestDetails atTestInfo = new NewTestDetails();
+    private List<tTest> TestsList;
+    private List<tMCQ> Mcqs;
+    private tQuestion Tests;
+    SfSpinner SpinnerObj;
+    private string Target { get; set; } = "#editForm";
+
+    private string[] _cssTypes = new string[] { "e-toast-warning", "e-toast-success", "e-toast-danger", "e-toast-info" };
+
+    void RadioSelection(ChangeEventArgs args)
+    {
+        RadioValue = args.Value.ToString();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //atTestInfo.Priority = 5;
+        await using (var db = new TrainingDbContext())
+        {
+            var info = db.tAttemptedTestInfoes.OrderByDescending(x => x.Id).FirstOrDefault();
+            AttemptedTestId = info.Id;
+            var questioninfo = db.tTestResults.Where(x => x.AttemptedTestInfoId == info.Id).OrderByDescending(x => x.Id).FirstOrDefault();
+
+            int quesNo;
+            if (questioninfo == null)
+            {
+                quesNo = 1;
+            }
+            else
+            {
+                var questioninfo1 = db.tTestResults.Where(x => x.AttemptedTestInfoId == info.Id).OrderByDescending(x => x.Id).FirstOrDefault();
+
+                quesNo = Convert.ToInt32(questioninfo1.QuestionNo);
+                quesNo = quesNo + 1;
+            }
+            TestId =Convert.ToInt32(info.TestId);
+            var question = db.tQuestions.Where(x => x.TestId == info.TestId && x.QuestionNumber == quesNo.ToString()).FirstOrDefault();
+            if (question != null)
+            {
+                QuestionNo = question.QuestionNumber;
+                Description = question.QuestionDescription;
+                QuestionId = question.Question_Id;
+                CorrectOption = question.CorrectOption;
+                Mcqs = db.tMCQs.Where(x => x.QuestionId == question.Question_Id).ToList();
+            }
+            else
+            {
+                navigationManager.NavigateTo($"/TestAttempt/TestFinished");
+            }
+
+
+        }
+    }
+
+    //public void TestChanged()
+    //{
+    //    using (var db = new TrainingDbContext())
+    //    {
+    //        atTestInfo.TestId = db.MaintenanceMasterEquipmentList.Where(a => a.EquipmentStatus == "ACTIVE" && (a.Location == atTestInfo.Location || a.Location == "CAMCO") && a.IsActive).OrderBy(a => a.EquipmentBrassTag).ToList();
+    //    }
+    //}
+
+    public async void HandleValidSubmit()
+    {
+        try
+        {
+
+            IsSubmitted = true;
+            tTestResult saveData;
+            //SpinnerObj.ShowSpinner(Target);
+            await using (var db = new TrainingDbContext())
+            {
+                saveData = new tTestResult
+                {
+                    QuestionId = QuestionId,
+                    TestId=TestId,
+                    SelectedOption=RadioValue,
+                    AttemptedTestInfoId=AttemptedTestId,
+                    QuestionNo=QuestionNo,
+                    CorrectOption=CorrectOption
+                };
+                db.tTestResults.Add(saveData);
+                db.SaveChanges();
+              
+               
+         
+            }
+            OnInitializedAsync();
+
+            ////toastService.ShowSuccess("Successfully submitted Work Order!", "Successful Submit");
+            ////navigationManager.NavigateTo($"/TestAttempt/AttemptTest");
+
+        }
+
+
+        catch (Exception ex)
+        {
+            toastService.ShowError("Error submitting Work Order!", "Failed Submit");
+            IsSubmitted = false;
+        }
+
+        //SpinnerObj.HideSpinner(Target);
+    }
+
+    public partial class NewTestDetails
+    {
+        //[Required]
+        public int? InterviewerId { get; set; }
+        //[Required]
+        public int? EmployeeId { get; set; }
+        //[Required]
+        public int? TestId { get; set; }
+
+    } }

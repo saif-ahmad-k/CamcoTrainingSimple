@@ -1,0 +1,165 @@
+﻿@page "/Report/TestReport"
+
+@using Syncfusion.Blazor.DropDowns
+@using CamcoTrainingSimple.Data
+@using CamcoTrainingSimple.Data.Models
+@using System.ComponentModel.DataAnnotations
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Spinner
+@using Syncfusion.Blazor.Grids
+
+
+@inject Microsoft.AspNetCore.Components.NavigationManager navigationManager
+@inject Blazored.Toast.Services.IToastService toastService
+
+
+<h1>Result</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form>
+            <div class="form-group">
+                <label for="TestId" class="control-label">Test</label>
+                <select class="form-control" @onchange="TestClicked">
+                    <option value="0">-- Select Test --</option>
+                    @if (Tests != null)
+                    {
+        @foreach (var country in Tests)
+        {
+<option value="@country.Test_Id">@country.TestName</option>
+}}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="CategoryId" class="control-label">Employees</label>
+                <select class="form-control" @onchange="EmpClicked">
+                    <option value="0">-- Select Employees --</option>
+                    @if (Employees != null)
+                    {
+        @foreach (var Employee in Employees)
+        {
+<option value="@Employee.Employee_Id">@Employee.EmployeeName</option>
+}
+                    
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="CategoryId" class="control-label">Interviewer</label>
+                <select class="form-control" @onchange="InterviewerClicked">
+                    <option value="0">-- Select Interviewer --</option>
+                    @if (Interviewer != null)
+                    {
+        @foreach (var Interviewer in Interviewer)
+        {
+<option value="@Interviewer.InterviewerId">@Interviewer.FirstName</option>
+}}
+                </select>
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn btn-primary" @onclick="@(async () => await GetReport())">Search</button>
+
+            </div>
+
+        </form>
+    </div>
+</div>
+<table class="table table-default">
+    <thead>
+        <tr>
+            <th>QuestionNo:</th>
+            <th>Selected Option</th>
+
+            <th>Correct Option</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (TestResult != null)
+        {
+@foreach (tTestResult item in TestResult)
+{
+        <tr>
+            <td>
+                @item.QuestionNo
+            </td>
+            <td>
+                @item.SelectedOption
+            </td>
+
+            <td>
+                @item.CorrectOption
+            </td>
+            @if (@item.SelectedOption == @item.CorrectOption)
+            {
+        <td>True</td>
+ }
+    else
+    {
+        <td>False</td>}
+
+            
+
+
+        </tr>
+}}
+    </tbody>
+</table>
+@code{ private string Name { get; set; }
+    private string Code { get; set; }
+    private int TestId { get; set; }
+    private int UserId { get; set; }
+    private int EmpId { get; set; }
+    private int InterviewerId { get; set; }
+    List<tTest> Tests;
+    List<tTestResult> TestResult;
+    List<tInterviewer> Interviewer;
+    List<tEmployee> Employees;
+    protected override async Task OnInitializedAsync()
+    {
+        await using (var db = new TrainingDbContext())
+        {
+            Employees = db.tEmployees.ToList();
+            Interviewer = db.tInterviewers.ToList();
+            Tests = db.tTests.ToList();
+
+        }
+    }
+    void EmpClicked(ChangeEventArgs clickedEvent)
+    {
+        EmpId = Convert.ToInt32(clickedEvent.Value);
+    }
+    void InterviewerClicked(ChangeEventArgs clickedEvent)
+    {
+        InterviewerId = Convert.ToInt32(clickedEvent.Value);
+    }
+    void TestClicked(ChangeEventArgs clickedEvent)
+    {
+        TestId = Convert.ToInt32(clickedEvent.Value);
+    }
+
+    //private async void GetEmployees()
+    //{
+    //    TestResult.Clear();
+
+    //    TestResult = await _context.GetEmployee();
+
+    //    StateHasChanged();
+    //}
+    private async Task GetReport()
+    {
+        await using (var db = new TrainingDbContext())
+        {
+            var testinfo = db.tAttemptedTestInfoes.Where(x => x.TestId == TestId && x.EmployeeId == EmpId && x.InterviewerId == InterviewerId).FirstOrDefault();
+            if (testinfo != null)
+            {
+                TestResult = db.tTestResults.Where(x => x.AttemptedTestInfoId == testinfo.Id).ToList();
+            }
+            StateHasChanged();
+
+        }
+    } 
+}
